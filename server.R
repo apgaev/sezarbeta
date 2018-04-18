@@ -5,31 +5,27 @@ library(dplyr)
 library(lubridate)
 library(randomForest)
 options(shiny.sanitize.errors = TRUE)
-load("rfModel.Rdata")
-load("bag.boston.Rdata")
+
+#load the random forest model, that predicts clusters
 load("analtodel.Rdata")
+#load the random forest model, that predicts the price
 load("theforest.Rdata")
-cities <- read.csv2("cities.csv")
+#load the dataset with the distances between major russian cities and its' coordinates
 citiesnumbers <- read.csv2("cities1.csv")
-#withgroup <- read.csv2("withgroup.csv")
-withgroupy <- read.csv2("withgroupy.csv")
-#analysetrain <- read.csv2("analysenumberstrain.csv")
-analt <- read.csv2("analt.csv")
-#maindata <- read.csv2("maindata.csv")
-datist <- read.csv2("datist.csv")
-cities <- select(cities, -c(X))
 citiesnumbers <- select(citiesnumbers, -c(X))
-#withgroup <- select(withgroup, -c(X))
+#load the dataset with cities and special groups, defined by logistics experts
+withgroupy <- read.csv2("withgroupy.csv")
 withgroupy <- select(withgroupy, -c(X))
-#analysetrain <- select(analysetrain, -c(X))
+#load the short version of the full dataset. Unfortunately I can not provide the whole dataset due to the privacy policy of my company.
+analt <- read.csv2("analthead.csv")
+datist <- read.csv2("dathead.csv")
 analt <- select(analt, -c(X))
-#maindata <- select(maindata, -c(X))
 datist <- select(datist, -c(X))
-#analysetrainodel <-randomForest(factor(clusters) ~ ., data=analysetrain)
-#bag.boston=randomForest(price~.,data=maindata, mtry=13, importance=TRUE)
+
 server <- function(input, output, session) {
   data <- eventReactive(input$count, {
-    fordistance = filter(cities, load_city ==  input$load_city | load_city == input$unload_city)
+    #convert input data according to the model
+    fordistance = filter(citiesnumbers, load_city ==  input$load_city | load_city == input$unload_city)
     fordistance = filter(fordistance, unload_city ==  input$load_city | unload_city == input$unload_city)
     forstartcoord = filter(citiesnumbers, unload_city == input$load_city)
     fordestcoord = filter(citiesnumbers, unload_city == input$unload_city)
@@ -66,13 +62,22 @@ server <- function(input, output, session) {
     price <- as.integer(1)
     topredict <- data.frame(price, distance, value, volume, payment, loading_date, transportation_duration, weight, cargo_type, start_lat, start_lon, dest_lat, dest_lon, two_loadings, two_unloadings, vehicle_type, from_msc, to_msc, from_saintp, to_saintp, to_east, to_south, thegroup, week, clusters)
     topredict = select(topredict, -c(price))
+    
+    #joining the input data with the original dataset made for the learning model in order to eleminate the new factor level error common for random forest
     withpredict = rbind(analt, topredict)
     data.test = tail(withpredict, n=1)
+    
+    #defining clusters that were previously gained from unsupervised learning model as a stage of data handling process
     rfPredict<-predict(analtodel, data.test, probability=FALSE)
     topredict$clusters = as.factor(rfPredict)
+    
     topredict$price <- as.integer(1)
+    
+    #repeat the process of solving the random forest factor level error
     datacomplete = rbind(datist, topredict)
     data.test = tail(datacomplete, n=1)
+    
+    #completing the final prediction and receiving the result
     yhat.bag = predict(theforest,newdata=data.test)
     yhat.bag
   })

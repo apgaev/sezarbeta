@@ -1,0 +1,7 @@
+"";"X";"price";"distance";"value";"volume";"payment";"loading_date";"transportation_duration";"weight";"cargo_type";"start_lat";"start_lon";"dest_lat";"dest_lon";"two_loadings";"two_unloadings";"vehicle_type";"from_msc";"to_msc";"from_saintp";"to_saintp";"to_east";"to_south";"week";"clusters";"thegroup"
+"1";1;95000;2100;2000000;82;"безнал без НДС";42951;4;7;"equipment";54,22718;37,598546;68,978414;33,068216;FALSE;FALSE;"upside";FALSE;FALSE;FALSE;FALSE;-4,53033;14,751234;31;1;"Murmansk"
+"2";2;95000;2100;2000000;82;"безнал без НДС";42950;5;7;"equipment";54,22718;37,598546;68,978414;33,068216;FALSE;FALSE;"upside";FALSE;FALSE;FALSE;FALSE;-4,53033;14,751234;31;1;"Murmansk"
+"3";3;45000;1700;750000;30;"безнал без НДС";42936;5;5;"equipment";56,861446;53,211311;61,789036;34,359688;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;-18,851623;4,92759;29;2;"Karelia"
+"4";4;5000;255;250000;2;"наличные";42854;1;0,2;"equipment";44,609764;40,100516;43,443579;39,910369;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;-0,190146999999996;-1,166185;17;3;"Krasnodar"
+"5";5;111000;3500;2500000;12;"безнал без НДС";42852;6;3;"equipment";51,697159;55,091341;58,372228;97,416274;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;42,324933;6,675069;17;4;"Sibir"
+"6";6;10000;900;100000;2;"наличные";42835;1;1,1;"oil";61,088212;72,616331;62,100056;77,482469;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;4,86613799999999;1,011844;15;5;"Ugra"

@@ -1,0 +1,7 @@
+"";"X";"distance";"value";"volume";"payment";"loading_date";"transportation_duration";"weight";"cargo_type";"start_lat";"start_lon";"dest_lat";"dest_lon";"two_loadings";"two_unloadings";"vehicle_type";"from_msc";"to_msc";"from_saintp";"to_saintp";"to_east";"to_south";"week";"clusters";"thegroup"
+"1";1;2100;2000000;82;"безнал без НДС";42951;4;7;"equipment";54,22718;37,598546;68,978414;33,068216;FALSE;FALSE;"upside";FALSE;FALSE;FALSE;FALSE;-4,53033;14,751234;31;1;"Murmansk"
+"2";2;1700;750000;30;"безнал без НДС";42936;5;5;"equipment";56,861446;53,211311;61,789036;34,359688;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;-18,851623;4,92759;29;2;"Karelia"
+"3";3;590;168352;12;"безнал без НДС";42761;1;1;"equipment";56,866416;60,584009;58,014383;53,708914;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;-6,875095;1,147967;4;5;"Volga"
+"4";4;200;2500000;82;"безнал без НДС";42760;1;0,0215;"Non-hazardous Chemistry";56,18186;40,604785;56,231848;43,502382;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;2,897597;0,049987999999999;4;6;"NN"
+"5";5;2100;1250000;82;"безнал без НДС";42746;5;12;"equipment";54,22718;37,598546;68,969582;33,074558;FALSE;FALSE;"upside";FALSE;FALSE;FALSE;FALSE;-4,523988;14,742402;2;1;"Murmansk"
+"6";6;380;100000;2;"наличные";42732;1;1,05;"oil";61,260914;73,26637;62,100056;77,482469;FALSE;FALSE;"any";FALSE;FALSE;FALSE;FALSE;4,216099;0,839142000000002;52;5;"Ugra"
