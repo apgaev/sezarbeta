@@ -18,10 +18,13 @@ source("~/Downloads/distances.R")
 
 #upload the info and datasets chosen by admin to make calculations
 the_model_to_use <- read.csv2("~/Downloads/cargo_type_module/the_model_to_use.csv")
-models <- read.csv2("~/Downloads/cargo_type_module/models.csv")
+models <- read.csv2("~/Downloads/models.csv")
 models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
 
 #if model contains clusters - upload the random forest model, that predicts clusters
+#print(gsub("^$|^ $", NA, models$cluster_model_name))
+#print(as.character(models$cluster_model_name))
+#print(is.na(as.character(models$cluster_model_name)))
 if (is.na(models$cluster_model_name)==FALSE) {
     model <- paste0("~/Downloads/cargo_type_module/", models$cluster_model_name)
     load(model)
@@ -29,6 +32,10 @@ if (is.na(models$cluster_model_name)==FALSE) {
 
 #load the random forest model, that predicts the price
 model <- paste0("~/Downloads/cargo_type_module/", models$server_model_name)
+load(model)
+
+#load the random forest model, that predicts the dollar price
+model <- paste0("~/Downloads/cargo_type_module/", models$dollar_model_name)
 load(model)
 
 server <- function(input, output, session) {
@@ -536,8 +543,8 @@ server <- function(input, output, session) {
 
         if (nrow(columns_table)!=0) {
             
-            original_dt <- as.character(models$original_dt)
-            the_dataset <- paste0("~/Downloads/", original_dt)
+            original_dt <- as.character(models$temporary)
+            the_dataset <- paste0("~/Downloads/cargo_type_module/", original_dt)
             addition <- read.csv2(the_dataset)
             addition <- select(addition, -c(X))
             
@@ -561,36 +568,21 @@ server <- function(input, output, session) {
                 #in groups_profile there are original column_vector and the_group - how it transforms
                 #need to change selected_dt according to groups_profile
                 selected_dt <- left_join(selected_dt, groups_profile, by = parent_column_names)
-                print(selected_dt)
+                #print(selected_dt)
                 addition_vector <- c(addition[which(colnames(addition) == as.character(columns_table$column_name[i]))])
                 addition_tail_vector <- c(selected_dt[ncol(selected_dt)])
                 selected_dt[ncol(selected_dt)] <- factor(addition_tail_vector[[1]], 
                                                          levels = levels(addition_vector[[1]]))
                 colnames(selected_dt)[ncol(selected_dt)] <- 
                     input_name
-                print(selected_dt)
             }
         }
-        #print(selected_dt)
-        #select only relevant columns for data.frame
-        #columns_table <- read.csv2(file = paste0("~/Downloads/cargo_type_module/", as.character(models$columns_table)))
-        #column_names <- as.character(columns_table$column_name)
-        #column_names <- column_names[ column_names != "clusters" ]
-        #selected_dt <- select(selected_dt, column_names)
-        #print(selected_dt)
-        #topredict <- data.frame(price, distance, value, volume, payment, loading_date, transportation_duration, weight, cargo_type, start_lat, start_lon, dest_lat, dest_lon, two_loadings, two_unloadings, vehicle_type, from_msc, to_msc, from_saintp, to_saintp, to_east, to_south, thegroup, week, clusters)
-        #topredict <- data.frame(price, distance, value, volume, payment, loading_date, transportation_duration, weight, cargo_type, start_lat, start_lon, dest_lat, dest_lon, two_loadings, two_unloadings, vehicle_type, from_msc, to_msc, from_saintp, to_saintp, to_east, to_south, thegroup, week, clusters)
-        #topredict = select(topredict, -c(price))
-        #print(topredict)
-        #joining the input data with the original dataset made for the learning model in order to eleminate the new factor level error common for random forest
-        #withpredict = rbind(analt, topredict)
-        #data.test = tail(withpredict, n=1)
         
         #defining clusters that were previously gained from unsupervised learning model as a stage of data handling process
-        models <- read.csv2("~/Downloads/cargo_type_module/models.csv")
+        models <- read.csv2("~/Downloads/models.csv")
         models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
-        original_dt <- as.character(models$original_dt)
-        the_dataset <- paste0("~/Downloads/", original_dt)
+        original_dt <- as.character(models$temporary)
+        the_dataset <- paste0("~/Downloads/cargo_type_module/", original_dt)
         addition <- read.csv2(the_dataset)
         addition <- select(addition, -c(X))
 
@@ -598,29 +590,16 @@ server <- function(input, output, session) {
         selected_dt$payment <- factor(selected_dt$payment, levels = levels(addition$payment))
         selected_dt$car_type <- factor(selected_dt$car_type, levels = levels(addition$car_type))
         selected_dt$cargo_type <- factor(selected_dt$cargo_type, levels = levels(addition$cargo_type))
-        #selected_dt$regions_applied <- factor(selected_dt$regions_applied, levels = levels(addition$regions_applied))
-        #selected_dt$departure_applied <- factor(selected_dt$departure_applied, levels = levels(addition$departure_applied))
-        rfPredict<-predict(rfModel_cluster, newdata=selected_dt, probability=FALSE)
-        print(rfPredict)
-        #topredict$clusters = as.factor(rfPredict)
-        print(sapply(addition, class))
-        print(sapply(selected_dt, class))
-        #selected_dt$clusters = factor(rfPredict, levels = addition$cluster)
-        selected_dt$clusters <- rfPredict
-        print(selected_dt)
-        write.csv2(selected_dt, file = "~/Downloads/selected_dt.csv")
+        
+        #if model contains clusters - upload the random forest model, that predicts clusters
+        if (is.na(models$cluster_model_name)==FALSE) {
+            rfPredict<-predict(rfModel_cluster, newdata=selected_dt, probability=FALSE)
+            selected_dt$clusters <- rfPredict
+        }
+
         rfPredict<-predict(rfModel, newdata=selected_dt, probability=FALSE)
-        as.matrix(rfPredict)
-        #selected_dt
-        #topredict$price <- as.integer(1)
-        
-        #repeat the process of solving the random forest factor level error
-        #datacomplete = rbind(datist, topredict)
-        #data.test = tail(datacomplete, n=1)
-        
-        #completing the final prediction and receiving the result
-        #yhat.bag = predict(theforest,newdata=data.test)
-        #yhat.bag
+        rfPredict_dollar<-predict(rfModel_dollar, newdata=selected_dt, probability=FALSE)
+        as.matrix(data.frame(rfPredict,rfPredict_dollar))
     })
     
     output$price <- DT::renderDataTable({

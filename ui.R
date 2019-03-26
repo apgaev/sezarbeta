@@ -7,12 +7,15 @@ citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
 stpetersburgstreets <- read.csv2("~/Downloads/stpetersburgstreets.csv")
 moscowstreets <- read.csv2("~/Downloads/moscowstreets.csv")
 car_type <- read.csv2("~/Downloads/car_type.csv")
-models <- read.csv2("~/Downloads/cargo_type_module/models.csv")
+models <- read.csv2("~/Downloads/models.csv")
 the_model_to_use <- read.csv2("~/Downloads/cargo_type_module/the_model_to_use.csv")
 models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
 cargo_types <- read.csv2(file = paste0("~/Downloads/", as.character(models$cargo_types_ds)))
+cargo_types <- filter(cargo_types, cargo_type != "необработанные")
 cargo_types <- cargo_types[!duplicated(cargo_types$cargo_type), ]
-
+car_types <- read.csv2(file = paste0("~/Downloads/", as.character(models$car_types_ds)))
+car_types <- car_types[!duplicated(car_types$car_type), ]
+car_types <- filter(car_types, car_type != "необработанные")
 dashboardPage(skin = "blue",
               dashboardHeader(title = "Прогнозчик"
               ),
@@ -83,7 +86,7 @@ dashboardPage(skin = "blue",
                                                    value = 0)),
                                column(3,
                                       selectInput(inputId = "car_type", h3("Тип авто"), 
-                                                  choices = car_type$car_type)),
+                                                  choices = car_types$car_type)),
                                column(3,
                                       selectInput(inputId = "money_transfer_form", h3("Форма оплаты"), 
                                                   choices = list("по ОТТН и документам на оплату", "по сканам ТТН и квитку", 
