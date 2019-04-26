@@ -21,10 +21,6 @@ the_model_to_use <- read.csv2("~/Downloads/cargo_type_module/the_model_to_use.cs
 models <- read.csv2("~/Downloads/models.csv")
 models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
 
-#if model contains clusters - upload the random forest model, that predicts clusters
-#print(gsub("^$|^ $", NA, models$cluster_model_name))
-#print(as.character(models$cluster_model_name))
-#print(is.na(as.character(models$cluster_model_name)))
 if (is.na(models$cluster_model_name)==FALSE) {
     model <- paste0("~/Downloads/cargo_type_module/", models$cluster_model_name)
     load(model)
@@ -38,7 +34,7 @@ load(model)
 model <- paste0("~/Downloads/cargo_type_module/", models$dollar_model_name)
 load(model)
 
-server <- function(input, output, session) {
+server <- function(input, output) {
     #state reactive values
     region <- NULL
     makeReactiveBinding("region")
@@ -52,15 +48,24 @@ server <- function(input, output, session) {
     #check for necessary columns
     columns_table <- read.csv2(file = paste0("~/Downloads/cargo_type_module/", as.character(models$columns_table)))
     for_colnames <- read.csv2(file = "~/Downloads/basic_column_names.csv")
+    parent_columns_table <- na.omit(columns_table)
     
-    #hide inputs that not needed
+    #function that check whether the coefficient is in the dataset
+    #coefficients may be in column_name or in parent_column_names
+    #need to detect it and to apply it
+    #i know its names, so i may use basic filter and nrow to determine its presence in dt
+    #for parent column names i have to filter NA and grepl it
+    
+    #the algorithm would look like this:
+    #get the basic column name [i]
     for (i in 1:nrow(for_colnames)) {
-        addition <- grepl(for_colnames$basic_column_names[i], columns_table$parent_column_names)
-        addition <- data.frame(addition)
-        if (nrow(filter(columns_table, columns_table$column_name == as.character(for_colnames$basic_column_names[i])))==0) {
-            if (nrow(filter(addition, addition == "TRUE"))==0) {
-                shinyjs::hide(as.character(for_colnames$basic_column_names[i]))
+        if (nrow(filter(columns_table, column_name == as.character(for_colnames$basic_column_names[i])))==0) {
+            addition <- data.frame(grepl(as.character(for_colnames$basic_column_names[i]), parent_columns_table$parent_column_names))
+            if (nrow(filter(addition, grepl.as.character.for_colnames.basic_column_names.i....parent_columns_table.parent_column_names. == TRUE))!=0) {
+                shinyjs::toggle(id = as.character(for_colnames$basic_column_names[i]), anim = TRUE)
             }
+        } else {
+            shinyjs::toggle(id = as.character(for_colnames$basic_column_names[i]), anim = TRUE)
         }
     }
     
@@ -69,179 +74,136 @@ server <- function(input, output, session) {
         if (input$load_city == "Санкт-Петербург") {
             shinyjs::hide("moscow_streets")
             shinyjs::show("stp_streets")
+            shinyjs::hide("load_city_dt")
         } else if (input$load_city == "Москва") {
             shinyjs::hide("stp_streets")
             shinyjs::show("moscow_streets")
+            shinyjs::hide("load_city_dt")
         } else {
             shinyjs::hide("stp_streets")
             shinyjs::hide("moscow_streets")
+            shinyjs::show("load_city_dt")
             citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
             citiesnew <- select(citiesnew, region, city, latitude, longitude)
             citiesnew <- filter(citiesnew, city == input$load_city)
-            output$load_city_dt = DT::renderDataTable(citiesnew)
+            output$load_city_dt = renderTable(citiesnew, colnames = FALSE)
         }
     })
+    
+    output$ati_output = DT::renderDataTable(#ati_foo(), options = list(dom = 't') %>%
+        datatable(ati_foo(), options = list(dom = 't')) %>%
+            formatStyle("изменение относительно вчера", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
+            formatStyle("относительно позавчера", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
+            formatStyle("относительно недели назад", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
+            formatStyle("относительно недельного среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
+            formatStyle("относительно месячного среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
+            formatStyle("относительно годового среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine')))
+    )
+    ati_foo <- eventReactive({input$weight
+        input$unload_city
+        input$load_city}, {
+            if (input$load_city != "Санкт-Петербург" && input$load_city != "Москва") {
+                citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
+                citiesnew <- select(citiesnew, region, city, latitude, longitude)
+                citiesnew <- filter(citiesnew, city == input$load_city)
+                regions <- read.csv2("~/Downloads/regions.csv")
+                regions <- filter(regions, region == as.character(citiesnew$region))
+                ati_output <- read.csv2("~/Downloads/ati_output.csv")
+                ati_output$nas <- grepl(as.character(regions$ati), ati_output$load_region)
+            } else {
+                regions <- read.csv2("~/Downloads/regions.csv")
+                regions <- filter(regions, region == input$load_city)
+                ati_output <- read.csv2("~/Downloads/ati_output.csv")
+                ati_output$nas <- grepl(as.character(regions$ati), ati_output$load_region)
+            }
+            
+            if (nrow(filter(ati_output, nas == FALSE)) == nrow(ati_output)) {
+                ati_output <- "Недостаточно данных в АТИ по данному маршруту"
+            } else {
+                ati_output <- filter(ati_output, load_region == as.character(regions$ati))
+                ati_output <- select(ati_output, -c(nas))
+                if (input$unload_city != "Санкт-Петербург" && input$unload_city != "Москва") {
+                    citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
+                    citiesnew <- select(citiesnew, region, city, latitude, longitude)
+                    citiesnew <- filter(citiesnew, city == input$unload_city)
+                    regions <- read.csv2("~/Downloads/regions.csv")
+                    regions <- filter(regions, region == as.character(citiesnew$region))
+                    ati_output$nas <- grepl(as.character(regions$ati), ati_output$unload_region)
+                } else {
+                    regions <- read.csv2("~/Downloads/regions.csv")
+                    regions <- filter(regions, region == input$unload_city)
+                    ati_output$nas <- grepl(as.character(regions$ati), ati_output$unload_region)
+                }
+                
+                if (nrow(filter(ati_output, nas == FALSE)) == nrow(ati_output)) {
+                    ati_output <- "Недостаточно данных в АТИ по данному маршруту"
+                } else {
+                    ati_output <- filter(ati_output, unload_region == as.character(regions$ati))
+                    if (input$weight > 13.5) {
+                        ati_output <- filter(ati_output, weight == ">14")
+                        ati_output <- select(ati_output, car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average, to_month_average, to_year_average)
+                    } else {
+                        ati_output <- filter(ati_output, weight != ">14")
+                        ati_output <- select(ati_output, car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average, to_month_average, to_year_average)
+                    }
+                }
+            }
+            
+            if (class(ati_output) == "data.frame") {
+                ati_output$car_type <- gsub("tent", "тент", ati_output$car_type)
+                ati_output$car_type <- gsub("ref", "реф", ati_output$car_type)
+                ati_output$to_yesterday <- gsub("\\.0", "", ati_output$to_yesterday)
+                ati_output$to_day_before_yesterday <- gsub("\\.0", "", ati_output$to_day_before_yesterday)
+                ati_output$to_week_before <- gsub("\\.0", "", ati_output$to_week_before)
+                ati_output$now_to_week_average <- gsub("\\..*", "", ati_output$now_to_week_average)
+                ati_output$to_month_average <- gsub("\\..*", "", ati_output$to_month_average)
+                ati_output$to_year_average <- gsub("\\..*", "", ati_output$to_year_average)
+                ati_output <- rename(ati_output, "тип авто" = car_type, "сейчас выставлено на АТИ по данному маршруту" = now, "изменение относительно вчера" = "to_yesterday", "относительно позавчера" = "to_day_before_yesterday", "относительно недели назад" = "to_week_before", "относительно недельного среднего" = "now_to_week_average", "относительно месячного среднего" = "to_month_average", "относительно годового среднего" = "to_year_average")
+            } else {
+                #ati_output$now <- "по этому направлению в АТИ отсутствуют данные"
+                car_type <- NA
+                now <- "по этому направлению в АТИ отсутствуют данные"
+                to_yesterday <- NA 
+                to_day_before_yesterday <- NA 
+                to_week_before <- NA 
+                now_to_week_average <- NA
+                to_month_average <- NA
+                to_year_average <- NA
+                ati_output <- data.frame(car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average, to_month_average, to_year_average)
+                ati_output <- rename(ati_output, "тип авто" = car_type, "сейчас выставлено на АТИ по данному маршруту" = now, "изменение относительно вчера" = "to_yesterday", "относительно позавчера" = "to_day_before_yesterday", "относительно недели назад" = "to_week_before", "относительно недельного среднего" = "now_to_week_average", "относительно месячного среднего" = "to_month_average", "относительно годового среднего" = "to_year_average")
+                
+                #ati_output <- data.frame(ati_output)
+            }
+            
+            
+            ati_output
+        })
     
     #the same for the destination
     observeEvent(input$unload_city, {
         if (input$unload_city == "Санкт-Петербург") {
             shinyjs::hide("moscow_streets_unload")
             shinyjs::show("stp_streets_unload")
+            shinyjs::hide("load_city_dt_unload")
         } else if (input$unload_city == "Москва") {
             shinyjs::hide("stp_streets_unload")
             shinyjs::show("moscow_streets_unload")
+            shinyjs::hide("load_city_dt_unload")
         } else {
             shinyjs::hide("stp_streets_unload")
             shinyjs::hide("moscow_streets_unload")
+            shinyjs::show("load_city_dt_unload")
             citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
             citiesnew <- select(citiesnew, region, city, latitude, longitude)
             citiesnew <- filter(citiesnew, city == input$unload_city)
-            output$load_city_dt_unload = DT::renderDataTable(citiesnew)
+            output$load_city_dt_unload = renderTable(citiesnew, colnames = FALSE)
         }
     })
     
     observeEvent(input$add_new_location, {
-        
-        citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
-        stpetersburgstreets <- read.csv2("~/Downloads/stpetersburgstreets.csv")
-        moscowstreets <- read.csv2("~/Downloads/moscowstreets.csv")
-        citiesnew <- select(citiesnew, -c(X))
-        stpetersburgstreets <- select(stpetersburgstreets, -c(X))
-        moscowstreets <- select(moscowstreets, -c(X))
-        
-        shinyalert(
-            title = "Создать новую локацию",
-            text = "Введите название региона (Москва, Санкт-Петербург, Московская, Татарстан и т.п.)",
-            closeOnEsc = TRUE,
-            closeOnClickOutside = TRUE,
-            html = FALSE,
-            type = "input",
-            inputType = "text",
-            inputValue = "",
-            inputPlaceholder = "",
-            showConfirmButton = TRUE,
-            showCancelButton = TRUE,
-            confirmButtonText = "OK",
-            confirmButtonCol = "#00FFD9",
-            cancelButtonText = "Cancel",
-            timer = 0,
-            imageUrl = "",
-            animation = TRUE,
-            callbackR = function(x) { if(x != FALSE) {
-                region <- input$shinyalert
-                
-                shinyalert(
-                    title = "Создать новую локацию",
-                    text = "Введите название населенного пункта",
-                    closeOnEsc = TRUE,
-                    closeOnClickOutside = TRUE,
-                    html = FALSE,
-                    type = "input",
-                    inputType = "text",
-                    inputValue = "",
-                    inputPlaceholder = "",
-                    showConfirmButton = TRUE,
-                    showCancelButton = TRUE,
-                    confirmButtonText = "OK",
-                    confirmButtonCol = "#00FFD9",
-                    cancelButtonText = "Cancel",
-                    timer = 0,
-                    imageUrl = "",
-                    animation = TRUE,
-                    callbackR = function(x) { if(x != FALSE) {
-                        city <- input$shinyalert
-                        
-                        shinyalert(
-                            title = "Создать новую локацию",
-                            text = "Введите название улицы",
-                            closeOnEsc = TRUE,
-                            closeOnClickOutside = TRUE,
-                            html = FALSE,
-                            type = "input",
-                            inputType = "text",
-                            inputValue = "",
-                            inputPlaceholder = "",
-                            showConfirmButton = TRUE,
-                            showCancelButton = TRUE,
-                            confirmButtonText = "OK",
-                            confirmButtonCol = "#00FFD9",
-                            cancelButtonText = "Cancel",
-                            timer = 0,
-                            imageUrl = "",
-                            animation = TRUE,
-                            callbackR = function(x) { if(x != FALSE) {
-                                street <- input$shinyalert
-                                
-                                shinyalert(
-                                    title = "Создать новую локацию",
-                                    text = "Введите координаты северной широты локации (разделитель - точка)",
-                                    closeOnEsc = TRUE,
-                                    closeOnClickOutside = TRUE,
-                                    html = FALSE,
-                                    type = "input",
-                                    inputType = "text",
-                                    inputValue = "",
-                                    inputPlaceholder = "",
-                                    showConfirmButton = TRUE,
-                                    showCancelButton = TRUE,
-                                    confirmButtonText = "OK",
-                                    confirmButtonCol = "#00FFD9",
-                                    cancelButtonText = "Cancel",
-                                    timer = 0,
-                                    imageUrl = "",
-                                    animation = TRUE,
-                                    callbackR = function(x) { if(x != FALSE) {
-                                        latitude <- input$shinyalert
-                                        
-                                        shinyalert(
-                                            title = "Создать новую локацию",
-                                            text = "Введите координаты восточной долготы пункта (разделитель - точка)",
-                                            closeOnEsc = TRUE,
-                                            closeOnClickOutside = TRUE,
-                                            html = FALSE,
-                                            type = "input",
-                                            inputType = "text",
-                                            inputValue = "",
-                                            inputPlaceholder = "",
-                                            showConfirmButton = TRUE,
-                                            showCancelButton = TRUE,
-                                            confirmButtonText = "OK",
-                                            confirmButtonCol = "#00FFD9",
-                                            cancelButtonText = "Cancel",
-                                            timer = 0,
-                                            imageUrl = "",
-                                            animation = TRUE,
-                                            callbackR = function(x) {
-                                                longitude <- input$shinyalert
-                                                addition <- data.frame(region, city, street, latitude, longitude)
-                                                if (city == "Санкт-Петербург") {
-                                                    stpetersburgstreets <- rbind(stpetersburgstreets, addition)
-                                                    write.csv2(stpetersburgstreets, "~/Downloads/stpetersburgstreets.csv")
-                                                    updateSelectInput(session, "stp_streets", choices = stpetersburgstreets$street)
-                                                } else if (city == "Москва") {
-                                                    moscowstreets <- rbind(moscowstreets, addition)
-                                                    write.csv2(moscowstreets, "~/Downloads/moscowstreets.csv")
-                                                    updateSelectInput(session, "moscow_streets", choices = moscowstreets$street)
-                                                } else {
-                                                    citiesnew <- rbind(citiesnew, addition)
-                                                    write.csv2(citiesnew, "~/Downloads/citiesnew.csv")
-                                                    updateSelectInput(session, "load_city", choices = list("Санкт-Петербург", "Москва", остальные=citiesnew$city))
-                                                }
-                                            }
-                                        )
-                                        
-                                    }}
-                                )
-                                
-                            }}
-                        )
-                        
-                    }}
-                )
-                
-            }}
-        )
-        
+        shinyjs::toggle(id = "advanced", anim = TRUE)
+        shinyjs::toggle(id = "advanced2", anim = TRUE)
+        shinyjs::toggle(id = "advanced3", anim = TRUE)
     })
     
     data <- eventReactive(input$count, {
@@ -289,8 +251,8 @@ server <- function(input, output, session) {
         selected_dt$car_type <- input$car_type
         selected_dt$duration <- input$duration
         selected_dt$calendar <- as.integer(input$calendar)
-        selected_dt$two_loadings.x <- as.logical(input$two_loadings.x)
-        selected_dt$two_loadings.y <- as.logical(input$two_loadings.y)
+        selected_dt$two_loadings.x <- as.logical(input$two_loadings)
+        selected_dt$two_loadings.y <- as.logical(input$two_unloadings)
         selected_dt$weight <- input$weight
         
         #prepare for dollar/diesel parser
@@ -308,26 +270,26 @@ server <- function(input, output, session) {
         #if there is either dollar or diesel_price - perform the calculaton
         #or pass
         if (nrow(filter(columns_table, columns_table$column_name == "diesel_price"))>0 | nrow(filter(columns_table, columns_table$column_name == "dollar"))>0 | nrow(filter(addition, addition == "TRUE"))!=0 | nrow(filter(addition, dollar == "TRUE"))!=0) {
-                        #delete strings that cannot be defined through Yandex parser
-                        progress$set(message = "Загрузка курса доллара и цены на топливо", value = 0)
-                        
-                        #deploy the parser
-                        py_run_file("~/Downloads/usd_diesel.py")
-                        jnastr240 = readLines("~/Downloads/usd_dollar.json") %>% 
-                            str_c(collapse = ",") %>%  
-                            (function(str) str_c("[", str, "]")) %>% 
-                            fromJSON(simplifyDataFrame = T)
-                        jnastr240<-jnastr240[[1]]
-                        write.csv(jnastr240, "~/Downloads/usd_diesel.csv")
-                        
-                        selected_dt$diesel_price <- as.character(jnastr240$diesel_price[1])
-                        selected_dt$diesel_price <- gsub("\\,", "\\.", selected_dt$diesel_price)
-                        selected_dt$diesel_price <- as.numeric(selected_dt$diesel_price)
-                        
-                        selected_dt$dollar <- as.character(jnastr240$dollar[1])
-                        selected_dt$dollar <- gsub("\\,", "\\.", selected_dt$dollar)
-                        selected_dt$dollar <- as.numeric(selected_dt$dollar)
-                        
+            #delete strings that cannot be defined through Yandex parser
+            progress$set(message = "Загрузка курса доллара и цены на топливо", value = 0)
+            
+            #deploy the parser
+            py_run_file("~/Downloads/usd_diesel.py")
+            jnastr240 = readLines("~/Downloads/usd_dollar.json") %>% 
+                str_c(collapse = ",") %>%  
+                (function(str) str_c("[", str, "]")) %>% 
+                fromJSON(simplifyDataFrame = T)
+            jnastr240<-jnastr240[[1]]
+            write.csv(jnastr240, "~/Downloads/usd_diesel.csv")
+            
+            selected_dt$diesel_price <- as.character(jnastr240$diesel_price[1])
+            selected_dt$diesel_price <- gsub("\\,", "\\.", selected_dt$diesel_price)
+            selected_dt$diesel_price <- as.numeric(selected_dt$diesel_price)
+            
+            selected_dt$dollar <- as.character(jnastr240$dollar[1])
+            selected_dt$dollar <- gsub("\\,", "\\.", selected_dt$dollar)
+            selected_dt$dollar <- as.numeric(selected_dt$dollar)
+            
         }
         
         #update remaining inputs
@@ -540,7 +502,7 @@ server <- function(input, output, session) {
         columns_table <- na.omit(columns_table)
         columns_table$X <- grepl(".csv", columns_table$profile_module_used)
         columns_table <- filter(columns_table, X==TRUE)
-
+        
         if (nrow(columns_table)!=0) {
             
             original_dt <- as.character(models$temporary)
@@ -556,7 +518,7 @@ server <- function(input, output, session) {
                 
                 #the column it came from
                 parent_column_names <- as.character(columns_table$parent_column_names[i])
-
+                
                 #need to change "column_name" to the name from dataset
                 colnames(groups_profile)[1] <- 
                     parent_column_names
@@ -585,7 +547,7 @@ server <- function(input, output, session) {
         the_dataset <- paste0("~/Downloads/cargo_type_module/", original_dt)
         addition <- read.csv2(the_dataset)
         addition <- select(addition, -c(X))
-
+        
         selected_dt$money_transfer_form <- factor(selected_dt$money_transfer_form, levels = levels(addition$money_transfer_form))
         selected_dt$payment <- factor(selected_dt$payment, levels = levels(addition$payment))
         selected_dt$car_type <- factor(selected_dt$car_type, levels = levels(addition$car_type))
@@ -596,14 +558,17 @@ server <- function(input, output, session) {
             rfPredict<-predict(rfModel_cluster, newdata=selected_dt, probability=FALSE)
             selected_dt$clusters <- rfPredict
         }
-
-        rfPredict<-predict(rfModel, newdata=selected_dt, probability=FALSE)
-        rfPredict_dollar<-predict(rfModel_dollar, newdata=selected_dt, probability=FALSE)
-        as.matrix(data.frame(rfPredict,rfPredict_dollar))
+        
+        ruble<-predict(rfModel, newdata=selected_dt, probability=FALSE)
+        dollar<-predict(rfModel_dollar, newdata=selected_dt, probability=FALSE)
+        price <- rbind(ruble, dollar)
+        currency <- c("Цена в рублях", "Цена в долларах")
+        #as.matrix(data.frame(ruble,dollar))
+        as.matrix(data.frame(currency,price))
     })
     
-    output$price <- DT::renderDataTable({
+    output$price <- renderTable({
         data()
-    },
+    }, colnames = FALSE,
     options = list(scrollX = TRUE))
 }
