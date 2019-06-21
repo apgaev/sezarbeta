@@ -18,7 +18,7 @@ car_types <- car_types[!duplicated(car_types$car_type), ]
 car_types <- filter(car_types, car_type != "необработанные")
 fluidPage(
   div(class="hidden",
-      regions <- read.csv2("~/Downloads/regions.csv"),
+      regions <- read.csv2("regions.csv"),
       regions <- select(regions, region)
   ),
   fluidRow(DT::dataTableOutput("ati_output")),
