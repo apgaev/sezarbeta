@@ -2,7 +2,6 @@ library(shiny)
 library(shinydashboard)
 library(DT)
 library(dplyr)
-#library(lubridate)
 library(randomForest)
 library(shinyjs)
 library(shinyalert)
@@ -14,11 +13,11 @@ use_python("/Users/antongaev/anaconda/bin/python", required = T)
 options(shiny.sanitize.errors = TRUE)
 
 #upload distance parser
-source("~/Downloads/distances.R")
+source("distances.R")
 
 #upload the info and datasets chosen by admin to make calculations
-the_model_to_use <- read.csv2("~/Downloads/cargo_type_module/the_model_to_use.csv")
-models <- read.csv2("~/Downloads/models.csv")
+the_model_to_use <- read.csv2("the_model_to_use.csv")
+models <- read.csv2("models.csv")
 models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
 
 if (is.na(models$cluster_model_name)==FALSE) {
@@ -83,7 +82,7 @@ server <- function(input, output) {
             shinyjs::hide("stp_streets")
             shinyjs::hide("moscow_streets")
             shinyjs::show("load_city_dt")
-            citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
+            citiesnew <- read.csv2("citiesnew.csv")
             citiesnew <- select(citiesnew, region, city, latitude, longitude)
             citiesnew <- filter(citiesnew, city == input$load_city)
             output$load_city_dt = renderTable(citiesnew, colnames = FALSE)
@@ -95,25 +94,23 @@ server <- function(input, output) {
             formatStyle("изменение относительно вчера", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
             formatStyle("относительно позавчера", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
             formatStyle("относительно недели назад", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
-            formatStyle("относительно недельного среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
-            formatStyle("относительно месячного среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine'))) %>%
-            formatStyle("относительно годового среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine')))
+            formatStyle("относительно недельного среднего", backgroundColor = styleInterval(0, c("pink", 'Aquamarine')))
     )
     ati_foo <- eventReactive({input$weight
         input$unload_city
         input$load_city}, {
             if (input$load_city != "Санкт-Петербург" && input$load_city != "Москва") {
-                citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
+                citiesnew <- read.csv2("citiesnew.csv")
                 citiesnew <- select(citiesnew, region, city, latitude, longitude)
                 citiesnew <- filter(citiesnew, city == input$load_city)
-                regions <- read.csv2("~/Downloads/regions.csv")
+                regions <- read.csv2("regions.csv")
                 regions <- filter(regions, region == as.character(citiesnew$region))
-                ati_output <- read.csv2("~/Downloads/ati_output.csv")
+                ati_output <- read.csv2("ati_output.csv")
                 ati_output$nas <- grepl(as.character(regions$ati), ati_output$load_region)
             } else {
-                regions <- read.csv2("~/Downloads/regions.csv")
+                regions <- read.csv2("regions.csv")
                 regions <- filter(regions, region == input$load_city)
-                ati_output <- read.csv2("~/Downloads/ati_output.csv")
+                ati_output <- read.csv2("ati_output.csv")
                 ati_output$nas <- grepl(as.character(regions$ati), ati_output$load_region)
             }
             
@@ -123,14 +120,14 @@ server <- function(input, output) {
                 ati_output <- filter(ati_output, load_region == as.character(regions$ati))
                 ati_output <- select(ati_output, -c(nas))
                 if (input$unload_city != "Санкт-Петербург" && input$unload_city != "Москва") {
-                    citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
+                    citiesnew <- read.csv2("citiesnew.csv")
                     citiesnew <- select(citiesnew, region, city, latitude, longitude)
                     citiesnew <- filter(citiesnew, city == input$unload_city)
-                    regions <- read.csv2("~/Downloads/regions.csv")
+                    regions <- read.csv2("regions.csv")
                     regions <- filter(regions, region == as.character(citiesnew$region))
                     ati_output$nas <- grepl(as.character(regions$ati), ati_output$unload_region)
                 } else {
-                    regions <- read.csv2("~/Downloads/regions.csv")
+                    regions <- read.csv2("regions.csv")
                     regions <- filter(regions, region == input$unload_city)
                     ati_output$nas <- grepl(as.character(regions$ati), ati_output$unload_region)
                 }
@@ -141,10 +138,10 @@ server <- function(input, output) {
                     ati_output <- filter(ati_output, unload_region == as.character(regions$ati))
                     if (input$weight > 13.5) {
                         ati_output <- filter(ati_output, weight == ">14")
-                        ati_output <- select(ati_output, car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average, to_month_average, to_year_average)
+                        ati_output <- select(ati_output, car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average)
                     } else {
                         ati_output <- filter(ati_output, weight != ">14")
-                        ati_output <- select(ati_output, car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average, to_month_average, to_year_average)
+                        ati_output <- select(ati_output, car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average)
                     }
                 }
             }
@@ -156,9 +153,7 @@ server <- function(input, output) {
                 ati_output$to_day_before_yesterday <- gsub("\\.0", "", ati_output$to_day_before_yesterday)
                 ati_output$to_week_before <- gsub("\\.0", "", ati_output$to_week_before)
                 ati_output$now_to_week_average <- gsub("\\..*", "", ati_output$now_to_week_average)
-                ati_output$to_month_average <- gsub("\\..*", "", ati_output$to_month_average)
-                ati_output$to_year_average <- gsub("\\..*", "", ati_output$to_year_average)
-                ati_output <- rename(ati_output, "тип авто" = car_type, "сейчас выставлено на АТИ по данному маршруту" = now, "изменение относительно вчера" = "to_yesterday", "относительно позавчера" = "to_day_before_yesterday", "относительно недели назад" = "to_week_before", "относительно недельного среднего" = "now_to_week_average", "относительно месячного среднего" = "to_month_average", "относительно годового среднего" = "to_year_average")
+                ati_output <- rename(ati_output, "тип авто" = car_type, "сейчас выставлено на АТИ по данному маршруту" = now, "изменение относительно вчера" = "to_yesterday", "относительно позавчера" = "to_day_before_yesterday", "относительно недели назад" = "to_week_before", "относительно недельного среднего" = "now_to_week_average")
             } else {
                 #ati_output$now <- "по этому направлению в АТИ отсутствуют данные"
                 car_type <- NA
@@ -170,7 +165,7 @@ server <- function(input, output) {
                 to_month_average <- NA
                 to_year_average <- NA
                 ati_output <- data.frame(car_type, now, to_yesterday, to_day_before_yesterday, to_week_before, now_to_week_average, to_month_average, to_year_average)
-                ati_output <- rename(ati_output, "тип авто" = car_type, "сейчас выставлено на АТИ по данному маршруту" = now, "изменение относительно вчера" = "to_yesterday", "относительно позавчера" = "to_day_before_yesterday", "относительно недели назад" = "to_week_before", "относительно недельного среднего" = "now_to_week_average", "относительно месячного среднего" = "to_month_average", "относительно годового среднего" = "to_year_average")
+                ati_output <- rename(ati_output, "тип авто" = car_type, "сейчас выставлено на АТИ по данному маршруту" = now, "изменение относительно вчера" = "to_yesterday", "относительно позавчера" = "to_day_before_yesterday", "относительно недели назад" = "to_week_before", "относительно недельного среднего" = "now_to_week_average")
                 
                 #ati_output <- data.frame(ati_output)
             }
@@ -193,7 +188,7 @@ server <- function(input, output) {
             shinyjs::hide("stp_streets_unload")
             shinyjs::hide("moscow_streets_unload")
             shinyjs::show("load_city_dt_unload")
-            citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
+            citiesnew <- read.csv2("citiesnew.csv")
             citiesnew <- select(citiesnew, region, city, latitude, longitude)
             citiesnew <- filter(citiesnew, city == input$unload_city)
             output$load_city_dt_unload = renderTable(citiesnew, colnames = FALSE)
@@ -274,13 +269,13 @@ server <- function(input, output) {
             progress$set(message = "Загрузка курса доллара и цены на топливо", value = 0)
             
             #deploy the parser
-            py_run_file("~/Downloads/usd_diesel.py")
-            jnastr240 = readLines("~/Downloads/usd_dollar.json") %>% 
+            py_run_file("usd_diesel.py")
+            jnastr240 = readLines("usd_dollar.json") %>% 
                 str_c(collapse = ",") %>%  
                 (function(str) str_c("[", str, "]")) %>% 
                 fromJSON(simplifyDataFrame = T)
             jnastr240<-jnastr240[[1]]
-            write.csv(jnastr240, "~/Downloads/usd_diesel.csv")
+            write.csv(jnastr240, "usd_diesel.csv")
             
             selected_dt$diesel_price <- as.character(jnastr240$diesel_price[1])
             selected_dt$diesel_price <- gsub("\\,", "\\.", selected_dt$diesel_price)
@@ -297,12 +292,12 @@ server <- function(input, output) {
         city.x <- input$load_city
         
         #prepare for coordinates search
-        citiesnew <- read.csv2("~/Downloads/citiesnew.csv")
-        stpetersburgstreets <- read.csv2("~/Downloads/stpetersburgstreets.csv")
-        moscowstreets <- read.csv2("~/Downloads/moscowstreets.csv")
-        citiesnew <- select(citiesnew, -c(X))
-        stpetersburgstreets <- select(stpetersburgstreets, -c(X))
-        moscowstreets <- select(moscowstreets, -c(X))
+        citiesnew <- read.csv2("citiesnew.csv")
+        stpetersburgstreets <- read.csv2("stpetersburgstreets.csv")
+        moscowstreets <- read.csv2("moscowstreets.csv")
+        citiesnew <- select(citiesnew, region, city, street, latitude, longitude)
+        stpetersburgstreets <- select(stpetersburgstreets, region, city, street, latitude, longitude)
+        moscowstreets <- select(moscowstreets, region, city, street, latitude, longitude)
         
         if (input$load_city == "Санкт-Петербург") {
             region.x <- "Санкт-Петербург"
@@ -530,7 +525,6 @@ server <- function(input, output) {
                 #in groups_profile there are original column_vector and the_group - how it transforms
                 #need to change selected_dt according to groups_profile
                 selected_dt <- left_join(selected_dt, groups_profile, by = parent_column_names)
-                #print(selected_dt)
                 addition_vector <- c(addition[which(colnames(addition) == as.character(columns_table$column_name[i]))])
                 addition_tail_vector <- c(selected_dt[ncol(selected_dt)])
                 selected_dt[ncol(selected_dt)] <- factor(addition_tail_vector[[1]], 
@@ -541,7 +535,7 @@ server <- function(input, output) {
         }
         
         #defining clusters that were previously gained from unsupervised learning model as a stage of data handling process
-        models <- read.csv2("~/Downloads/models.csv")
+        models <- read.csv2("models.csv")
         models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
         original_dt <- as.character(models$temporary)
         the_dataset <- paste0("~/Downloads/cargo_type_module/", original_dt)

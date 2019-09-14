@@ -1,0 +1,9 @@
+;user_model_name;server_model_name;cluster_model_name;columns_table;cargo_types_ds;original_dt;dollar_model_name;car_types_ds;temporary
+1;good_dollar_bad_ruble;1.Rdata;NA;columns_table_1.csv;cargo_types.csv;6.csv;dollar_1.Rdata;car_types2.csv;temporary1.csv
+2;nice_one;2.Rdata;NA;columns_table_2.csv;cargo_types.csv;6.csv;dollar_2.Rdata;car_types2.csv;temporary2.csv
+3;simple_but_good;3.Rdata;NA;columns_table_3.csv;cargo_types.csv;2.csv;dollar_3.Rdata;car_types2.csv;temporary3.csv
+4;bigger_model;4.Rdata;cluster.Rdata;columns_table_4.csv;cargo_types.csv;3.csv;dollar_4.Rdata;car_types2.csv;temporary4.csv
+5;5thousands;5.Rdata;clusterNA.Rdata;columns_table_5.csv;cargo_types.csv;4.csv;dollar_5.Rdata;car_types2.csv;temporary5.csv
+6;empty_model;6.Rdata;NA;columns_table_6.csv;cargo_types.csv;4.csv;dollar_6.Rdata;car_types2.csv;temporary6.csv
+7;80_percent_short;7.Rdata;NA;columns_table_7.csv;cargo_types.csv;1.csv;dollar_7.Rdata;car_types2.csv;temporary7.csv
+8;it_should_look_wierd;8.Rdata;NA;columns_table_8.csv;cargo_types.csv;4.csv;dollar_8.Rdata;car_types2.csv;temporary8.csv
