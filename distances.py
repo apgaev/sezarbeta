@@ -29,14 +29,20 @@ for row in reader:
             latitudeY.append(c)
             longitudeY.append(e)
 
-u = 'https://route.api.here.com/routing/7.2/calculateroute.json?app_id=IU3YYj0Ai0H8AVHef3Rp&app_code=73UE_IH4hNxcEohNdQ0Zdw&waypoint0=geo!'
+with open('here_api_keys.json') as json_file:
+    here_api_keys = json.load(json_file)
+    print(here_api_keys.get('app_id'))
+
+u = 'https://route.api.here.com/routing/7.2/calculateroute.json?app_id='
+u_id = '&app_code='
+u_code = '&waypoint0=geo!'
 r = '&waypoint1=geo!'
 l = '&mode=fastest;car;traffic:disabled'
 comma = ','
 
 for i in range(1,len(route)):
     try:
-        url = u+latitudeX[i]+comma+longitudeX[i]+r+latitudeY[i]+comma+longitudeY[i]+l
+        url = u+here_api_keys.get('app_id')+u_id+here_api_keys.get('app_code')+u_code+latitudeX[i]+comma+longitudeX[i]+r+latitudeY[i]+comma+longitudeY[i]+l
         response = requests.get(url).text
         rus = json.loads(response)
         elem = int(int(rus.get("response").get("route")[0].get('summary').get('distance')) / 1000)

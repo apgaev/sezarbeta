@@ -37,7 +37,7 @@ def main():
     price = get_all_links(all_html)
     data = []
 
-    reader = csv.reader(open('/Users/antongaev/Downloads/usd_diesel.csv', 'r', encoding="utf-8", newline =''))
+    reader = csv.reader(open('usd_diesel.csv', 'r', encoding="utf-8", newline =''))
     #convert reader into json
     for row in reader:
             datasuka = {"calendar": row[1], "diesel_price": row[2], "dollar": row[3]}
