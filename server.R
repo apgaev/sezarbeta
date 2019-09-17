@@ -9,8 +9,10 @@ library(reticulate)
 library(tidyr)
 library(jsonlite)
 library(stringr)
-use_python("/Users/antongaev/anaconda/bin/python", required = T)
-options(shiny.sanitize.errors = TRUE)
+#use_python("//anaconda3/bin/python3", required = T)
+#conda_list()[[1]][1] %>% 
+    #use_condaenv(required = TRUE)
+#options(shiny.sanitize.errors = TRUE)
 
 #upload distance parser
 source("distances.R")
@@ -21,16 +23,16 @@ models <- read.csv2("models.csv")
 models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
 
 if (is.na(models$cluster_model_name)==FALSE) {
-    model <- paste0("~/Downloads/cargo_type_module/", models$cluster_model_name)
+    model <- as.character(models$cluster_model_name)
     load(model)
 } 
 
 #load the random forest model, that predicts the price
-model <- paste0("~/Downloads/cargo_type_module/", models$server_model_name)
+model <- as.character(models$server_model_name)
 load(model)
 
 #load the random forest model, that predicts the dollar price
-model <- paste0("~/Downloads/cargo_type_module/", models$dollar_model_name)
+model <- as.character(models$dollar_model_name)
 load(model)
 
 server <- function(input, output) {
@@ -45,8 +47,8 @@ server <- function(input, output) {
     makeReactiveBinding("latitude")
     
     #check for necessary columns
-    columns_table <- read.csv2(file = paste0("~/Downloads/cargo_type_module/", as.character(models$columns_table)))
-    for_colnames <- read.csv2(file = "~/Downloads/basic_column_names.csv")
+    columns_table <- read.csv2(file = as.character(models$columns_table))
+    for_colnames <- read.csv2(file = "basic_column_names.csv")
     parent_columns_table <- na.omit(columns_table)
     
     #function that check whether the coefficient is in the dataset
@@ -482,7 +484,7 @@ server <- function(input, output) {
         columns_table <- filter(columns_table, X==TRUE)
         if (nrow(columns_table)!=0) {
             for (i in 1:nrow(columns_table)) {
-                to_source <- paste0("~/Downloads/cargo_type_module/", columns_table$profile_module_used[i])
+                to_source <- as.character(columns_table$profile_module_used[i])
                 parent_column_names <- as.character(columns_table$parent_column_names[i])
                 input_name <- as.character(columns_table$column_name[i])
                 source(to_source)
@@ -493,7 +495,7 @@ server <- function(input, output) {
         }
         
         #upload unknown factor columns
-        columns_table <- read.csv2(file = paste0("~/Downloads/cargo_type_module/", as.character(models$columns_table)))
+        columns_table <- read.csv2(file = as.character(models$columns_table))
         columns_table <- na.omit(columns_table)
         columns_table$X <- grepl(".csv", columns_table$profile_module_used)
         columns_table <- filter(columns_table, X==TRUE)
@@ -501,13 +503,13 @@ server <- function(input, output) {
         if (nrow(columns_table)!=0) {
             
             original_dt <- as.character(models$temporary)
-            the_dataset <- paste0("~/Downloads/cargo_type_module/", original_dt)
+            the_dataset <- original_dt
             addition <- read.csv2(the_dataset)
             addition <- select(addition, -c(X))
             
             for (i in 1:nrow(columns_table)) {
                 #the model is in csv, so import it
-                to_source <- paste0("~/Downloads/cargo_type_module/", columns_table$profile_module_used[i])
+                to_source <- as.character(columns_table$profile_module_used[i])
                 groups_profile <- read.csv2(to_source)
                 groups_profile <- select(groups_profile, -c(X))
                 
@@ -538,7 +540,7 @@ server <- function(input, output) {
         models <- read.csv2("models.csv")
         models <- filter(models, user_model_name == as.character(the_model_to_use$the_model_to_use))
         original_dt <- as.character(models$temporary)
-        the_dataset <- paste0("~/Downloads/cargo_type_module/", original_dt)
+        the_dataset <- original_dt
         addition <- read.csv2(the_dataset)
         addition <- select(addition, -c(X))
         
